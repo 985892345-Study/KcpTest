@@ -28,6 +28,10 @@ class KcpTest {
         @Target(AnnotationTarget.CLASS)
         @Retention(AnnotationRetention.RUNTIME)
         annotation class TestA(val path: String)
+  
+        @Target(AnnotationTarget.CLASS)
+        @Retention(AnnotationRetention.RUNTIME)
+        annotation class TestC(val name: String)
       """.trimIndent()
     )
     val javaSource = SourceFile.java(
@@ -58,13 +62,21 @@ class KcpTest {
     assert(result.exitCode == KotlinCompilation.ExitCode.OK) {
       result.messages
     }
+  
+    val testClazz = result.classLoader.loadClass("ATest")
+    println(testClazz.annotations.contentToString())
     
-    val testClazz = result.classLoader.loadClass("ATest")!!
-    val testBClazz = result.classLoader.loadClass("TestB")!!
+    val testBClazz = result.classLoader.loadClass("TestB")
     @Suppress("UNCHECKED_CAST")
     testBClazz as Class<out Annotation>
     assert(testClazz.isAnnotationPresent(testBClazz))
-    val testB = testClazz.getAnnotation(testBClazz)
-    println(testB)
+    
+    val testCClass = result.classLoader.loadClass("TestC")
+    @Suppress("UNCHECKED_CAST")
+    testCClass as Class<out Annotation>
+    val testC = testClazz.getAnnotation(testCClass)
+    val method = testCClass.getDeclaredMethod("name")
+    val name = method.invoke(testC)
+    assert(name == "自定义填充的参数")
   }
 }
