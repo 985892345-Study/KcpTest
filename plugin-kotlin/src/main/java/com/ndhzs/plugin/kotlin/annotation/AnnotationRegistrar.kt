@@ -23,8 +23,6 @@ class AnnotationRegistrar : CompilerPluginRegistrar() {
   
   override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
     val messageCollector = configuration.get(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
-    IrGenerationExtension.registerExtension(
-      AnnotationExtension(messageCollector)
-    )
+    IrGenerationExtension.registerExtension(AnnotationExtension(messageCollector))
   }
 }
