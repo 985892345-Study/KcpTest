@@ -13,6 +13,7 @@
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/plugin-gradle" />
             <option value="$PROJECT_DIR$/plugin-kotlin" />
+            <option value="$PROJECT_DIR$/service-provider" />
           </set>
         </option>
       </GradleProjectSettings>

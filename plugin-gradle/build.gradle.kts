@@ -1,5 +1,5 @@
 plugins {
-  id("java-gradle-plugin")
+  id("com.gradle.plugin-publish") version "1.2.0" // https://plugins.gradle.org/docs/publish-plugin
   kotlin("jvm")
 }
 
@@ -14,15 +14,20 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
   }
 }
 
+dependencies {
+  implementation(kotlin("gradle-plugin-api"))
+}
+
+version = "0.0.10"
+group = "com.g985892345.kcptest"
+
 gradlePlugin {
   plugins {
-    create("kcpTest") {
-      id = "kcpTest"
+    create("kcp") {
+      id = "com.g985892345.kcptest"
+      displayName = "KcpTest"
+      description = "KcpTest"
       implementationClass = "com.ndhzs.plugin.gradle.KcpTestGradlePlugin"
     }
   }
-}
-
-dependencies {
-  implementation(kotlin("gradle-plugin-api"))
 }

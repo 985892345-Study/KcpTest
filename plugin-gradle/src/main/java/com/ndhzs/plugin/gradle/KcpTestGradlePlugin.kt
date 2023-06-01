@@ -29,9 +29,9 @@ class KcpTestGradlePlugin : KotlinCompilerPluginSupportPlugin {
   
   override fun getPluginArtifact(): SubpluginArtifact {
     return SubpluginArtifact(
-      groupId = "com.ndhzs.plugin",
-      artifactId = "kcpTest",
-      version = "0.0.1",
+      groupId = "com.g985892345.kcptest",
+      artifactId = "KcpTest",
+      version = "0.0.10",
     )
   }
   

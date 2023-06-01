@@ -18,3 +18,4 @@ rootProject.name = "KcpTest"
 include(":app")
 include(":plugin-gradle")
 include(":plugin-kotlin")
+include(":service-provider")

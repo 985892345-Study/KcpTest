@@ -14,8 +14,6 @@ import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 @AutoService(CommandLineProcessor::class)
 @OptIn(ExperimentalCompilerApi::class)
 class KcpTestCommandLineProcessor : CommandLineProcessor {
-  override val pluginId: String
-    get() = "kcpTest"
-  override val pluginOptions: Collection<AbstractCliOption>
-    get() = emptyList()
+  override val pluginId: String = "kcpTest"
+  override val pluginOptions: Collection<AbstractCliOption> = emptyList()
 }

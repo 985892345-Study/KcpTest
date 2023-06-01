@@ -26,12 +26,25 @@ dependencies {
   testImplementation("com.github.tschuchortdev:kotlin-compile-testing:1.5.0")
 }
 
+tasks.register("javadocJar", Jar::class.java) {
+  archiveClassifier.set("javadoc")
+  from("javadoc")
+}
+
+tasks.register("sourcesJar", Jar::class.java) {
+  archiveClassifier.set("sources")
+  from(sourceSets["main"].allSource)
+}
+
 publishing {
   publications {
     create<MavenPublication>("Kcp") {
-      groupId = "com.ndhzs.plugin"
-      artifactId = "kcpTest"
-      version = "0.0.1"
+      groupId = "com.g985892345.kcptest"
+      artifactId = "KcpTest"
+      version = "0.0.10"
+      artifact(tasks["javadocJar"])
+      artifact(tasks["sourcesJar"])
+      from(components["java"])
     }
   }
 }

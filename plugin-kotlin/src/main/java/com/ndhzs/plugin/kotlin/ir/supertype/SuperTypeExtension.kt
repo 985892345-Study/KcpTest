@@ -1,38 +1,23 @@
-package com.ndhzs.plugin.kotlin.supertype
+package com.ndhzs.plugin.kotlin.ir.supertype
 
-import com.ndhzs.plugin.kotlin.BaseIrGenerationExtension
+import com.ndhzs.plugin.kotlin.LogUtils
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
+import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.backend.common.ir.addDispatchReceiver
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.ir.IrStatement
-import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.builders.declarations.addFunction
-import org.jetbrains.kotlin.ir.builders.declarations.buildFun
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.builders.irCall
-import org.jetbrains.kotlin.ir.builders.irCallConstructor
-import org.jetbrains.kotlin.ir.builders.irCallOp
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irReturn
-import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
-import org.jetbrains.kotlin.ir.declarations.IrValueParameter
-import org.jetbrains.kotlin.ir.declarations.impl.IrValueParameterImpl
-import org.jetbrains.kotlin.ir.symbols.impl.IrValueParameterSymbolImpl
-import org.jetbrains.kotlin.ir.types.IrSimpleType
-import org.jetbrains.kotlin.ir.types.SimpleTypeNullability
 import org.jetbrains.kotlin.ir.types.defaultType
-import org.jetbrains.kotlin.ir.types.isMarkedNullable
-import org.jetbrains.kotlin.ir.types.makeNotNull
-import org.jetbrains.kotlin.ir.types.removeAnnotations
-import org.jetbrains.kotlin.ir.types.starProjectedType
-import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.copyTo
 import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.functions
@@ -49,8 +34,8 @@ import org.jetbrains.kotlin.name.Name
  * 2023/5/29 11:00
  */
 class SuperTypeExtension(
-  messageCollector: MessageCollector
-) : BaseIrGenerationExtension(messageCollector) {
+  override val messageCollector: MessageCollector
+) : IrGenerationExtension, LogUtils {
   @OptIn(FirIncompatiblePluginAPI::class)
   override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
     val iTestName = FqName("ITest")
@@ -116,14 +101,14 @@ class SuperTypeExtension(
             dispatchReceiverParameter = declaration.thisReceiver!!.copyTo(
               thisFunction,
               origin = IrDeclarationOrigin.DEFINED,
-              type = declaration.thisReceiver!!.type.makeNotNull()
             )
+            // 因为 java 层带有其他东西，所以不能直接复制
             valueParameters = superFunction.valueParameters.map {
               it.copyTo(
                 thisFunction,
                 origin = IrDeclarationOrigin.DEFINED,
                 type = iTest1Symbol.defaultType
-              ).apply { annotations = emptyList() }
+              ).apply { annotations = emptyList() } // java 层带有 @NotNull，需要取消掉
             }
             body = DeclarationIrBuilder(pluginContext, symbol).irBlockBody {
               +irReturn(irCall(function.symbol).apply {

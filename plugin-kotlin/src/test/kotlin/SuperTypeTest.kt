@@ -1,5 +1,5 @@
 import com.ndhzs.plugin.kotlin.KcpTestCommandLineProcessor
-import com.ndhzs.plugin.kotlin.supertype.SuperTypeRegistrar
+import com.ndhzs.plugin.kotlin.ir.supertype.SuperTypeRegistrar
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi

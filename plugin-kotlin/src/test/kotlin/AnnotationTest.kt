@@ -1,5 +1,5 @@
 import com.ndhzs.plugin.kotlin.KcpTestCommandLineProcessor
-import com.ndhzs.plugin.kotlin.annotation.AnnotationRegistrar
+import com.ndhzs.plugin.kotlin.ir.annotation.AnnotationRegistrar
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi

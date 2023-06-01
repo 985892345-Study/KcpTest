@@ -1,4 +1,4 @@
-package com.ndhzs.plugin.kotlin.supertype
+package com.ndhzs.plugin.kotlin.ir.supertype
 
 import com.google.auto.service.AutoService
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension

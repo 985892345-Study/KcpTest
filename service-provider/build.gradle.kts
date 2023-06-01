@@ -1,31 +1,24 @@
 plugins {
-  id("com.android.application")
+  id("com.android.library")
   id("org.jetbrains.kotlin.android")
-//  id("com.g985892345.kcptest") version "0.0.10"
-  // 上面这个插件找不到，请先注释后运行 plugin-gradle 和 plugin-kotlin 模块 gradle 中的 publishToMavenLocal
 }
 
 android {
-  namespace = "com.ndhzs.kcptest"
+  namespace = "com.g985892345.service.provider"
   compileSdk = 33
   
   defaultConfig {
-    applicationId = "com.ndhzs.androidwheel"
     minSdk = 24
     targetSdk = 33
-    versionCode = 1
-    versionName = "1.0"
     
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    consumerProguardFiles("consumer-rules.pro")
   }
   
   buildTypes {
     release {
-      isMinifyEnabled = true
-      proguardFiles(
-        getDefaultProguardFile("proguard-android-optimize.txt"),
-        "proguard-rules.pro"
-      )
+      isMinifyEnabled = false
+      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
   }
   compileOptions {
@@ -38,8 +31,6 @@ android {
 }
 
 dependencies {
-  
-  implementation(project(":service-provider"))
   
   implementation("androidx.core:core-ktx:1.8.0")
   implementation("androidx.appcompat:appcompat:1.6.1")

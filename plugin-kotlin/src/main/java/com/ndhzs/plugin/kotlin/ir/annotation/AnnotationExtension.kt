@@ -1,7 +1,8 @@
-package com.ndhzs.plugin.kotlin.annotation
+package com.ndhzs.plugin.kotlin.ir.annotation
 
-import com.ndhzs.plugin.kotlin.BaseIrGenerationExtension
+import com.ndhzs.plugin.kotlin.LogUtils
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
+import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.ir.IrStatement
@@ -11,11 +12,9 @@ import org.jetbrains.kotlin.ir.expressions.impl.IrConstructorCallImpl
 import org.jetbrains.kotlin.ir.interpreter.toIrConst
 import org.jetbrains.kotlin.ir.types.starProjectedType
 import org.jetbrains.kotlin.ir.util.constructors
-import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.getAnnotation
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.hasEqualFqName
-import org.jetbrains.kotlin.ir.util.isInterface
 import org.jetbrains.kotlin.ir.util.shallowCopy
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
@@ -28,8 +27,8 @@ import org.jetbrains.kotlin.name.FqName
  * 2023/5/26 17:50
  */
 class AnnotationExtension(
-  messageCollector: MessageCollector
-) : BaseIrGenerationExtension(messageCollector) {
+  override val messageCollector: MessageCollector
+) : IrGenerationExtension, LogUtils {
   
   @OptIn(FirIncompatiblePluginAPI::class)
   override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
