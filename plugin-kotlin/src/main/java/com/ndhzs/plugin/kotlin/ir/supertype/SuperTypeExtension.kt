@@ -51,7 +51,7 @@ class SuperTypeExtension(
       override fun visitClass(declaration: IrClass): IrStatement {
         if (declaration.hasEqualFqName(testImpl2ClassName)) {
           // 用于参考的 TestImpl2 的实现
-          declaration.declarations[2].dump().log2()
+          declaration.declarations[2].dump().log2("TestImpl2 ->\n")
         }
         if (declaration.hasEqualFqName(iTestName)) {
           // ITest 添加 ITest1 接口
@@ -85,7 +85,7 @@ class SuperTypeExtension(
             }
           }
           
-//          function.dump().log2()
+          function.dump().log2("ITest1.set ->\n")
           
           
           declaration.superTypes = declaration.superTypes + iTest2Symbol.defaultType
@@ -121,7 +121,7 @@ class SuperTypeExtension(
               })
             }
           }
-          function2.dump().log2()
+          function2.dump().log2("ITest1.abc ->\n")
         }
         return super.visitClass(declaration)
       }

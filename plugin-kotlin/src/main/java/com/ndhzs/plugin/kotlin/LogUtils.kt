@@ -21,7 +21,7 @@ interface LogUtils {
   }
   
   fun <T> T.log2(msg: String = ""): T {
-    if (msg.isEmpty()) log(this) else log("$msg   $this")
+    if (msg.isEmpty()) log(this) else log("$msg$this")
     return this
   }
 }

@@ -1,12 +1,9 @@
-package com.ndhzs.plugin.kotlin.app
+package com.ndhzs.plugin.kotlin.ir.superclass
 
 import com.google.auto.service.AutoService
-import com.ndhzs.plugin.kotlin.app.clazz.AppClassExtension
-import com.ndhzs.plugin.kotlin.app.ir.AppIrExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
-import org.jetbrains.kotlin.codegen.extensions.ClassBuilderInterceptorExtension
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
@@ -15,18 +12,26 @@ import org.jetbrains.kotlin.config.CompilerConfiguration
  * .
  *
  * @author 985892345
- * 2023/5/29 21:49
+ * 2023/6/14 14:50
  */
 @AutoService(CompilerPluginRegistrar::class)
 @OptIn(ExperimentalCompilerApi::class)
-class AppRegistrar : CompilerPluginRegistrar() {
-  
+class SuperClassRegistrar : CompilerPluginRegistrar() {
   override val supportsK2: Boolean
     get() = true
   
   override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
     val messageCollector = configuration.get(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
-    IrGenerationExtension.registerExtension(AppIrExtension(messageCollector))
-    ClassBuilderInterceptorExtension.registerExtension(AppClassExtension(messageCollector))
+    IrGenerationExtension.registerExtension(SuperClassExtension(messageCollector))
+    set { any ->
+    
+    }
+  }
+  
+  fun set(a: () -> Unit) {
+  }
+  
+  fun set(b: (Any) -> Any) {
+  
   }
 }
