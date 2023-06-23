@@ -20,19 +20,34 @@ class FindPackageTest {
     val source1 = SourceFile.kotlin(
       "Test1.kt", """
         package com.a
-      
-        class A
+
+        import TestAnnotation
+
+        @TestAnnotation(clazz = A::class, name = NAME)
+        class A(name: String = "123")
+
+        const val NAME = "123"
+
       """.trimIndent()
     )
     val source2 = SourceFile.kotlin(
       "Test2.kt", """
-        package com.b
+        package com.a.b
       
         class B
       """.trimIndent()
     )
+    val source3 = SourceFile.kotlin(
+      "Annotation.kt", """
+        import kotlin.reflect.KClass
+
+        @Target(AnnotationTarget.CLASS)
+        @Retention(AnnotationRetention.RUNTIME)
+        annotation class TestAnnotation(val clazz: KClass<*> = Any::class, val name: String = "")
+      """.trimIndent()
+    )
     val result = KotlinCompilation().apply {
-      sources = listOf(source1, source2)
+      sources = listOf(source1, source2, source3)
     
       // pass your own instance of a compiler plugin
       commandLineProcessors = listOf(KcpTestCommandLineProcessor())

@@ -5,7 +5,9 @@ import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.backend.common.lower.irBlock
+import org.jetbrains.kotlin.backend.common.serialization.proto.IrClassReference
 import org.jetbrains.kotlin.backend.common.serialization.proto.IrFunctionExpressionOrBuilder
+import org.jetbrains.kotlin.backend.jvm.ir.kClassReference
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
@@ -18,6 +20,7 @@ import org.jetbrains.kotlin.fir.expressions.builder.buildLambdaArgumentExpressio
 import org.jetbrains.kotlin.fir.resolve.defaultType
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
+import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.declarations.IrFunctionBuilder
 import org.jetbrains.kotlin.ir.builders.declarations.addFunction
 import org.jetbrains.kotlin.ir.builders.declarations.buildFun
@@ -26,6 +29,7 @@ import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irFunctionReference
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irReturn
+import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.builders.parent
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
@@ -33,9 +37,11 @@ import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.declarations.impl.IrFactoryImpl
 import org.jetbrains.kotlin.ir.declarations.impl.IrFunctionImpl
+import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.expressions.IrFunctionExpression
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrFunctionExpressionImpl
 import org.jetbrains.kotlin.ir.interpreter.toIrConst
 import org.jetbrains.kotlin.ir.symbols.impl.IrSimpleFunctionSymbolImpl
@@ -51,6 +57,7 @@ import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.functions
 import org.jetbrains.kotlin.ir.util.hasEqualFqName
+import org.jetbrains.kotlin.ir.util.irCall
 import org.jetbrains.kotlin.ir.util.irConstructorCall
 import org.jetbrains.kotlin.ir.util.isFunction
 import org.jetbrains.kotlin.ir.util.isFunctionOrKFunction
@@ -61,6 +68,7 @@ import org.jetbrains.kotlin.ir.util.setDeclarationsParent
 import org.jetbrains.kotlin.ir.util.statements
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
+import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
@@ -80,33 +88,36 @@ class SuperClassExtension(
   override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
     val child1Symbol = FqName("Child1")
     val child2Symbol = FqName("Child2")
+    var declaration1: IrClass? = null
     moduleFragment.transformChildrenVoid(object : IrElementTransformerVoid() {
       override fun visitClass(declaration: IrClass): IrStatement {
         val superClass = declaration.superClass
-//        if (superClass != null && superClass.hasEqualFqName(parentSymbol)) {
-//          val initFun = declaration.functions.single { it.name.asString() == "init" }
-//          log(
-//            "${declaration.name}\n" +
-//              "${initFun.origin}\n" +
-//              "${initFun.dump()}\n"
-//          )
-//        }
-//        if (declaration.hasEqualFqName(child3Symbol) || declaration.hasEqualFqName(child4Symbol)) {
-//          log(
-//            "${declaration.name}\n" +
-//              "${declaration.functions.single { it.name.asString() == "init" }.dump()}\n"
-//          )
-//        }
+        // if (superClass != null && superClass.hasEqualFqName(parentSymbol)) {
+        //   val initFun = declaration.functions.single { it.name.asString() == "init" }
+        //   log(
+        //     "${declaration.name}\n" +
+        //       "${initFun.origin}\n" +
+        //       "${initFun.dump()}\n"
+        //   )
+        // }
+        // if (declaration.hasEqualFqName(child3Symbol) || declaration.hasEqualFqName(child4Symbol)) {
+        //   log(
+        //     "${declaration.name}\n" +
+        //       "${declaration.functions.single { it.name.asString() == "init" }.dump()}\n"
+        //   )
+        // }
         if (declaration.hasEqualFqName(child1Symbol)) {
-          val initImplFun = addInitImplFun(moduleFragment, pluginContext, declaration)
+          declaration1 = declaration
+          val initImplFun = addInitImplFun(pluginContext, declaration)
           initImplFun.dump().log2("addInitImplFun ->\n")
-          overrideInitFun(moduleFragment, pluginContext, declaration, initImplFun)
+          overrideInitFun(pluginContext, declaration, initImplFun)
           declaration.functions
-            .filter { it.name.asString() == "init" || it.name.asString() == "initImpl" }
+            .filter { it.name.asString() == "init" || it.name.asString() == "_initImpl" }
             .joinToString("\n") {
               it.dump()
             }.log2()
         }
+        val declaration11 = declaration1
         if (declaration.hasEqualFqName(child2Symbol)) {
           declaration.functions
             .filter { it.name.asString() == "init" || it.name.asString() == "initImpl" }
@@ -120,11 +131,10 @@ class SuperClassExtension(
   }
   
   private fun addInitImplFun(
-    moduleFragment: IrModuleFragment,
     pluginContext: IrPluginContext,
     declaration: IrClass,
   ): IrSimpleFunction {
-    val child3Id = ClassId(FqName.ROOT, FqName("Child3"), false)
+    val child3Id = ClassId(FqName.ROOT, FqName("Child4"), false)
     val child3Symbol = pluginContext.referenceClass(child3Id)!!
     val constructor = child3Symbol.constructors.single()
     val parentId = ClassId(FqName.ROOT, FqName("Parent"), false)
@@ -133,16 +143,11 @@ class SuperClassExtension(
       .functions
       .filter { it.name.toString() == "set" }
       .single()
-    return declaration.addFunction {
-      name = Name.identifier("initImpl")
-      returnType = pluginContext.irBuiltIns.unitType
-      modality = Modality.FINAL
+    return declaration.addFunction(
+      "_initImpl",
+      pluginContext.irBuiltIns.unitType,
       visibility = DescriptorVisibilities.PRIVATE
-    }.also { initImpl ->
-      initImpl.dispatchReceiverParameter = declaration.thisReceiver!!.copyTo(
-        initImpl,
-        IrDeclarationOrigin.DEFINED
-      )
+    ).also { initImpl ->
       val setFun = declaration.functions
         .filter {
           it.overrides(parentSetFun)
@@ -150,35 +155,28 @@ class SuperClassExtension(
       initImpl.body = DeclarationIrBuilder(pluginContext, initImpl.symbol).irBlockBody {
         +irCall(setFun).also { callSet ->
           callSet.dispatchReceiver = irGet(initImpl.dispatchReceiverParameter!!)
-          val name = "123".toIrConst(pluginContext.irBuiltIns.stringType)
-          callSet.putValueArgument(0, name)
+          val nameStr = irString("123")
+          callSet.putValueArgument(0, nameStr)
           callSet.putValueArgument(
             1, IrFunctionExpressionImpl(
-              UNDEFINED_OFFSET, UNDEFINED_OFFSET,
+              startOffset, endOffset,
               pluginContext.irBuiltIns.functionN(0).typeWith(pluginContext.irBuiltIns.anyType),
-              IrFactoryImpl.createFunction(
-                name = Name.special("<anonymous>"),
-                startOffset = UNDEFINED_OFFSET,
-                endOffset = UNDEFINED_OFFSET,
-                origin = IrDeclarationOrigin.LOCAL_FUNCTION_FOR_LAMBDA,
-                symbol = IrSimpleFunctionSymbolImpl(null),
-                visibility = DescriptorVisibilities.LOCAL,
-                modality = Modality.FINAL,
-                returnType = pluginContext.irBuiltIns.anyType,
-                isInline = false,
-                isExternal = false,
-                isTailrec = false,
-                isSuspend = false,
-                isOperator = false,
-                isInfix = false,
-                isExpect = false,
-                isFakeOverride = false,
-                containerSource = null
-              ).also { lambda ->
+              initImpl.factory.buildFun {
+                name = Name.special("<anonymous>")
+                origin = IrDeclarationOrigin.LOCAL_FUNCTION_FOR_LAMBDA
+                visibility = DescriptorVisibilities.LOCAL
+                returnType = pluginContext.irBuiltIns.anyType
+              }.also { lambda ->
                 lambda.setDeclarationsParent(initImpl)
                 lambda.body = DeclarationIrBuilder(pluginContext, lambda.symbol).irBlockBody {
                   +irReturn(
                     irCall(constructor)
+                    // IrClassReferenceImpl(
+                    //   startOffset, endOffset,
+                    //   pluginContext.irBuiltIns.kClassClass.typeWith(child3Symbol.defaultType),
+                    //   child3Symbol,
+                    //   child3Symbol.defaultType
+                    // )
                   )
                 }
               },
@@ -191,31 +189,36 @@ class SuperClassExtension(
   }
   
   private fun overrideInitFun(
-    moduleFragment: IrModuleFragment,
     pluginContext: IrPluginContext,
     declaration: IrClass,
     initImplFun: IrSimpleFunction
   ) {
     val initFun = declaration.functions.single { it.name.asString() == "init" }
-    declaration.declarations.remove(initFun)
-    declaration.addFunction {
-      name = initFun.name
-      returnType = pluginContext.irBuiltIns.unitType
-      modality = Modality.OPEN
-      visibility = DescriptorVisibilities.PUBLIC
-    }.also { newInitFun ->
-      newInitFun.overriddenSymbols = initFun.overriddenSymbols
-      newInitFun.dispatchReceiverParameter = declaration.thisReceiver!!.copyTo(
-        newInitFun,
-        IrDeclarationOrigin.DEFINED
-      )
-      newInitFun.body = DeclarationIrBuilder(pluginContext, newInitFun.symbol).irBlockBody {
+    if (initFun.isFakeOverride) {
+      declaration.declarations.remove(initFun)
+      declaration.addFunction(
+        initFun.name.asString(),
+        pluginContext.irBuiltIns.unitType,
+        modality = initFun.modality,
+        visibility = initFun.visibility
+      ).also { newInitFun ->
+        newInitFun.overriddenSymbols += initFun.overriddenSymbols
+        newInitFun.body = DeclarationIrBuilder(pluginContext, newInitFun.symbol).irBlockBody {
+          +irCall(initImplFun).also {
+            it.dispatchReceiver = irGet(newInitFun.dispatchReceiverParameter!!)
+          }
+          +irPrint("test", pluginContext)
+        }
+      }
+    } else {
+      initFun.body = DeclarationIrBuilder(pluginContext, initFun.symbol).irBlockBody {
         +irCall(initImplFun).also {
-          it.dispatchReceiver = irGet(newInitFun.dispatchReceiverParameter!!)
+          it.dispatchReceiver = irGet(initFun.dispatchReceiverParameter!!)
         }
         initFun.body?.statements?.forEach {
           +it
         }
+        +irPrint("test", pluginContext)
       }
     }
   }
@@ -225,4 +228,16 @@ class SuperClassExtension(
       .firstOrNull { !it.isInterface() && !it.isAny() }
       ?.classOrNull
       ?.owner
+  
+  private fun IrBuilderWithScope.irPrint(msg: String, pluginContext: IrPluginContext): IrCall {
+    val callableId = CallableId(FqName("kotlin.io"), Name.identifier("println"))
+    val funPrintln = pluginContext.referenceFunctions(callableId)
+      .single {
+        val parameters = it.owner.valueParameters
+        parameters.size == 1 && parameters[0].type == pluginContext.irBuiltIns.anyNType
+      }
+    return irCall(funPrintln).apply {
+      putValueArgument(0, irString(msg))
+    }
+  }
 }

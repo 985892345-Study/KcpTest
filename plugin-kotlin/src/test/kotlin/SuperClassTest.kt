@@ -33,13 +33,14 @@ class SuperClassTest {
       "Child.kt", """
         open class Child1 : Parent() {
           override fun init() {
-            println("abc")
+            super.init()
           }
         }
 
         open class Child2 : Parent() {
           override fun init() {
             initImpl()
+            super.init()
             println("abc")
           }
 
@@ -56,7 +57,7 @@ class SuperClassTest {
           }
         }
 
-        class Child4 : Child2() {
+        class Child4(name: String = "123") : Child2() {
           override fun init() {
             super.init()
           }
